@@ -115,21 +115,21 @@ class KubeExternalDNSIngresss < Sensu::Plugins::Kubernetes::CLI
     bad_ingress_msg_map = {}
 
     ingresses = if config[:label_filter].nil?
-                 client.get_ingresses(namespace: namespace)
-               else
-                 client.get_ingresses(namespace: namespace, label_selector: config[:label_filter].to_s)
-               end
+                  client.get_ingresses(namespace: namespace)
+                else
+                  client.get_ingresses(namespace: namespace, label_selector: config[:label_filter].to_s)
+                end
 
-    ingresses.each do |s|
+    ingresses.each do |i|
       next if should_exclude_namespace(s.metadata.namespace)
-      next unless config[:ingresses].empty? || config[:ingresses].include?(s.metadata.name)
+      next unless config[:ingresses].empty? || config[:ingresses].include?(i.metadata.name)
 
-      hostnames = hostnames_for_ingress(s)
+      hostnames = hostnames_for_ingress(i)
       next if hostnames.empty?
 
       # NOTE: we only support IP targets at this time, and we assume hostnames are configured for a
       # service OR ingress, but never both
-      addresses = addresses_for_ingress(s)
+      addresses = addresses_for_ingress(i)
       next if addresses.empty?
 
       msg_parts = []
@@ -145,7 +145,7 @@ class KubeExternalDNSIngresss < Sensu::Plugins::Kubernetes::CLI
       end
 
       next if msg_parts.empty?
-      ingress_display_name = "#{s.metadata.namespace}/#{s.metadata.name}"
+      ingress_display_name = "#{i.metadata.namespace}/#{i.metadata.name}"
       bad_ingress_msg_map.merge!(ingress_display_name => msg_parts.join(', '))
     end
 
